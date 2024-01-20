@@ -1,24 +1,7 @@
 # Add the conversation data in a different file
 
 
-import google.generativeai as genai
-from saftey import safety_settings
-
-genai.configure(api_key="AIzaSyBg-VNjcsIDTLfPOgr3cK8u_3S2y5riSr0")
-
-generation_config = {
-    "temperature": 1.0,
-    "top_p": 1,
-    "top_k": 1,
-    "max_output_tokens": 1000,
-}
-
-model = genai.GenerativeModel(
-    model_name="gemini-pro",
-    generation_config=generation_config,
-    safety_settings=safety_settings
-)
-
+from model import model
 
 convo = model.start_chat(history=[
   {

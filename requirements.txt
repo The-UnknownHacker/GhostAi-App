@@ -24,7 +24,6 @@ requests==2.31.0
 rsa==4.9
 tqdm==4.66.1
 typing_extensions==4.9.0
-urllib3==2.1.0
 Werkzeug==3.0.1
 blinker==1.7.0
 cachetools==5.3.2

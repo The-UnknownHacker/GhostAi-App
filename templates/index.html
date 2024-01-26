@@ -18,11 +18,38 @@
             align-items: center;
             height: 100vh;
             margin: 0;
+            position: relative;
         }
 
         h1 {
             color: #4285F4;
             margin-bottom: 20px;
+        }
+
+        #settings-container {
+            position: absolute;
+            top: 10px;
+            left: 10px; /* Move it to the top-right corner */
+            cursor: pointer;
+            color: #ffffff;
+            background-color: #4285F4;
+            border: none;
+            border-radius: 50%;
+            width: 40px; /* Set a fixed width */
+            height: 40px; /* Set a fixed height */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+        }
+
+        #settings-container:hover {
+            background-color: #3367d6;
+        }
+
+        .settings-icon {
+            font-size: 24px;
+            margin: auto;
         }
 
         #chat-container {
@@ -33,6 +60,7 @@
             width: 100%;
             box-sizing: border-box;
             overflow-y: auto;
+            margin-top: 40px;
         }
 
         #chat-display {
@@ -47,13 +75,14 @@
         }
 
         #user-message {
-            width: 100%;
+            width: calc(100% - 20px);
             padding: 10px;
             border: none;
             border-radius: 5px;
             margin-bottom: 10px;
             background-color: #2C2C2C;
             color: #ffffff;
+            box-sizing: border-box;
         }
 
         #user-message::placeholder {
@@ -61,13 +90,14 @@
         }
 
         #send-button {
-            width: 100%;
+            width: calc(100% - 20px);
             padding: 10px;
             border: none;
             border-radius: 5px;
             background-color: #4285F4;
             color: #ffffff;
             cursor: pointer;
+            box-sizing: border-box;
         }
 
         #send-button:hover {
@@ -99,8 +129,22 @@
             font-weight: bold;
         }
 
-        /* Your existing CSS styles here */
+        @media only screen and (max-width: 600px) {
+            #settings-container {
+                top: 5px;
+                left: 5px;
+            }
+        }
+
+        .version-number {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+            color: #aaaaaa;
+        }
     </style>
+
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
 
     <script>
         function handleKeyPress(event) {
@@ -109,11 +153,13 @@
             }
         }
 
-        function parseFullStops(message) {
-            // Add a line gap after full stops unless it's a dot point
-            return message.replace(/(?<!\d\.)\.(?!$)/g, '.<br>');
+        function openSettings() {
+            window.location.href = "{{ url_for('settings') }}";
         }
 
+        function parseFullStops(message) {
+            return message.replace(/(?<!\d\.)\.(?!$)/g, '.<br>');
+        }
 
         function appendMessage(sender, message) {
             var chatDisplay = document.getElementById('chat-display');
@@ -126,24 +172,19 @@
             var chatDisplay = document.getElementById('chat-display');
             var messageElement = document.createElement('div');
 
-            // Check for specific formatting cues and apply appropriate formatting
             if (message.includes('You:') && message.includes('Ghost AI:')) {
-                // Detected explanatory text block
                 messageElement.innerHTML = '<div class="explanation-block">' + parseFullStops(message) + '</div>';
             } else if (message.includes('```python')) {
-                // Detected Python code block
                 messageElement.innerHTML = '<strong>' + sender + ':</strong><div class="code-block">'
                     + '<button class="copy-button" onclick="copyCode(this)">Copy</button>'
                     + '<pre><code>' + extractCode(message) + '</code></pre></div>';
             } else {
-                // If no specific formatting detected, display as a regular message
                 messageElement.innerHTML = '<strong>' + sender + ':</strong> ' + parseBoldText(parseNumberedList(parseFullStops(message)));
             }
 
             chatDisplay.appendChild(messageElement);
         }
 
-        // Add this function at the end to call parseFullStops on existing messages
         function parseExistingMessages() {
             var chatDisplay = document.getElementById('chat-display');
             var messages = chatDisplay.getElementsByTagName('div');
@@ -159,25 +200,22 @@
             appendMessage('You', userMessage);
             document.getElementById('user-message').value = '';
 
-            // Send user message to the server and get the response
-            fetch('/send_message', {
-                method: 'POST',
+            axios.post('/send_message', 'user_input=' + userMessage, {
                 headers: {
                     'Content-Type': 'application/x-www-form-urlencoded',
-                },
-                body: 'user_input=' + userMessage,
+                }
             })
-                .then(response => response.json())
-                .then(data => {
-                    var modelResponse = data.response;
+                .then(response => {
+                    var modelResponse = response.data.response;
                     formatAndAppendMessage('Ghost AI', modelResponse);
-                    // Scroll to the bottom after adding a new message
                     scrollToBottom();
+                })
+                .catch(error => {
+                    console.error('Error sending message:', error);
                 });
         }
 
         function extractCode(message) {
-            // Extract code between triple backticks
             var match = /```python([\s\S]*?)```/.exec(message);
             return match ? match[1].trim() : '';
         }
@@ -186,7 +224,6 @@
             var codeBlock = $(button).next().find('code');
             var codeText = codeBlock.text();
 
-            // Copy code to clipboard
             navigator.clipboard.writeText(codeText)
                 .then(() => {
                     button.innerText = 'Copied';
@@ -205,26 +242,22 @@
         }
 
         function parseBoldText(message) {
-            // Replace **text** with bold text
             return message.replace(/\*\*(.*?)\*\*/g, '<span class="bold-text">$1</span>');
         }
 
         function parseNumberedList(message) {
-            // Format numbered lists with a space between each statement
             return message.replace(/(?:^|\n)(\d+\.)\s*(.*?)$/gm, '$1 $2 <br><br>');
         }
 
-        // Call the function to parse existing messages
         parseExistingMessages();
     </script>
-
-    <script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>
-
-    <!-- Updated version number -->
-    <div style="text-align: center; margin-top: 20px; color: #aaaaaa;">Version: v2.0</div>
 </head>
 
 <body onkeydown="handleKeyPress(event)">
+    <div id="settings-container" onclick="openSettings()">
+        <div class="settings-icon">&#9881;</div>
+    </div>
+
     <h1>Ghost AI Chat</h1>
 
     <div id="chat-container">
@@ -234,6 +267,8 @@
             <button id="send-button" onclick="sendMessage()">Send</button>
         </div>
     </div>
+
+    <div class="version-number">Version: v2.3.1</div>
 </body>
 
 </html>

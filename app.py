@@ -2,7 +2,7 @@ import google.generativeai as genai
 from flask import Flask, render_template, request, jsonify
 from google.generativeai.types.safety_types import HarmBlockThreshold
 from convo import convo
-from api_key_a import enc_api_key
+from api_key import enc_api_key
 
 genai.configure(api_key=enc_api_key)
 app = Flask(__name__)
